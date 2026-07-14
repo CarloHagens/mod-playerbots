@@ -221,6 +221,13 @@ public:
 protected:
     SapphironBossHelper helper;
     bool MoveToNearestIcebolt();
+
+    // Hiding spot is chosen once per air phase; recomputing it every tick made bots
+    // pace in and out of the ice block's line-of-sight shadow.
+    ObjectGuid _hideTarget;
+    float _hideX = 0.0f;
+    float _hideY = 0.0f;
+    bool _hasHidePos = false;
 };
 
 // class SapphironAvoidChillAction : public MovementAction

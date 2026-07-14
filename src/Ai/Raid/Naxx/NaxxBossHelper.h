@@ -2,6 +2,7 @@
 #define PLAYERBOTS_NAXXBOSSHELPER_H
 
 #include <string>
+#include <unordered_map>
 
 #include "AiObject.h"
 #include "AiObjectContext.h"
@@ -163,21 +164,42 @@ public:
             if (!_unit)
                 return false;
         }
+        // Landing state must be shared: every trigger/action/multiplier owns its own helper
+        // instance, and the ground action never runs during the air phase, so a per-instance
+        // _was_flying flag can never observe the flying->ground transition.
+        LandingState& state = _landingStates[_unit->GetGUID()];
         bool now_flying = _unit->IsFlying();
-        if (_was_flying && !now_flying)
-            _last_land_ms = getMSTime();
-
-        _was_flying = now_flying;
+        if (!_unit->IsInCombat())
+        {
+            state = {};
+        }
+        else
+        {
+            if (!state.inCombat)
+            {
+                state.inCombat = true;
+                // Sapphiron starts grounded; treat the pull as a landing so the raid
+                // spreads on the opening ground phase too.
+                state.lastLandMs = getMSTime();
+            }
+            if (state.wasFlying && !now_flying)
+                state.lastLandMs = getMSTime();
+        }
+        state.wasFlying = now_flying;
         return true;
     }
     bool IsPhaseGround() { return _unit && !_unit->IsFlying(); }
     bool IsPhaseFlight() { return _unit && _unit->IsFlying(); }
     bool JustLanded()
     {
-        if (!_last_land_ms)
+        if (!_unit)
             return false;
 
-        return getMSTime() - _last_land_ms <= POSITION_TIME_AFTER_LANDED;
+        auto it = _landingStates.find(_unit->GetGUID());
+        if (it == _landingStates.end() || !it->second.lastLandMs)
+            return false;
+
+        return getMSTime() - it->second.lastLandMs <= POSITION_TIME_AFTER_LANDED;
     }
     bool WaitForExplosion()
     {
@@ -188,6 +210,7 @@ public:
         if (!group)
             return false;
 
+        uint32 iced = 0;
         for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
         {
             Player* member = ref->GetSource();
@@ -195,10 +218,16 @@ public:
                 (NaxxSpellIds::HasAnyAura(member, {NaxxSpellIds::Icebolt10, NaxxSpellIds::Icebolt25}) ||
                  botAI->HasAura("icebolt", member, false, false, -1, true)))
             {
-                return true;
+                ++iced;
             }
         }
-        return false;
+
+        // Only hide once the LAST ice bolt is out (2 bolts on 10-man, 3 on 25-man; iced
+        // players keep the aura until landing). Converging on the first block just herds
+        // the raid into the later bolts, and the frost missile only comes 1s after the
+        // final bolt with the explosion 8.5s later — there is ample time to hide then.
+        uint32 const totalBolts = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ? 3 : 2;
+        return iced >= totalBolts;
     }
     bool FindPosToAvoidChill(std::vector<float>& dest)
     {
@@ -250,17 +279,22 @@ public:
     }
 
 private:
+    struct LandingState
+    {
+        bool inCombat = false;
+        bool wasFlying = false;
+        uint32 lastLandMs = 0;
+    };
+
     void Reset()
     {
         _unit = nullptr;
-        _was_flying = false;
-        _last_land_ms = 0;
     }
 
     const uint32 POSITION_TIME_AFTER_LANDED = 5000;
     Unit* _unit = nullptr;
-    bool _was_flying = false;
-    uint32 _last_land_ms = 0;
+    // Shared across all SapphironBossHelper instances (per boss guid) — see UpdateBossAI.
+    inline static std::unordered_map<ObjectGuid, LandingState> _landingStates;
 };
 
 class GluthBossHelper : public AiObject

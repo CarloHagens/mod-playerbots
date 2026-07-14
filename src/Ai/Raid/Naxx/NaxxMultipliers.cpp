@@ -181,6 +181,16 @@ float SapphironGenericMultiplier::GetValue(Action* action)
     if (dynamic_cast<CastDeathGripAction*>(action) || dynamic_cast<CombatFormationMoveAction*>(action))
         return 0.0f;
 
+    // Air phase: the flight action owns movement (hide behind ice blocks). Without this,
+    // melee "reach target" keeps chasing the spot under the flying boss and bots pace in
+    // and out of line of sight, eating Frost Breath.
+    if (helper.IsPhaseFlight() &&
+        (dynamic_cast<ReachTargetAction*>(action) || dynamic_cast<FollowAction*>(action) ||
+         dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action)))
+    {
+        return 0.0f;
+    }
+
     return 1.0f;
 }
 
