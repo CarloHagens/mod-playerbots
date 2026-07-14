@@ -148,6 +148,8 @@ bool SapphironFlightTrigger::IsActive()
 
 bool GluthTrigger::IsActive() { return helper.UpdateBossAI(); }
 
+bool GothikTrigger::IsActive() { return helper.UpdateBossAI(); }
+
 bool GluthMainTankMortalWoundTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())

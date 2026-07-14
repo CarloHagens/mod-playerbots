@@ -397,6 +397,35 @@ private:
     Unit* _unit = nullptr;
 };
 
+class GothikBossHelper : public AiObject
+{
+public:
+    GothikBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
+    bool UpdateBossAI()
+    {
+        if (!bot->IsInCombat())
+            Reset();
+
+        if (_unit && (!_unit->IsInWorld() || !_unit->IsAlive()))
+            Reset();
+
+        if (!_unit)
+            _unit = AI_VALUE2(Unit*, "find target", "gothik the harvester");
+
+        return _unit != nullptr;
+    }
+    // Balcony phase: rooted up top (UNIT_FLAG_DISABLE_MOVE is set on engage and removed when
+    // he descends, see boss_gothik.cpp) but NOT immune to players — without special handling
+    // bots tunnel the boss instead of killing the waves.
+    bool IsBalconyPhase() { return _unit && _unit->HasUnitFlag(UNIT_FLAG_DISABLE_MOVE); }
+    Unit* GetBoss() { return _unit; }
+
+private:
+    void Reset() { _unit = nullptr; }
+
+    Unit* _unit = nullptr;
+};
+
 class FourHorsemenBossHelper : public AiObject
 {
 public:

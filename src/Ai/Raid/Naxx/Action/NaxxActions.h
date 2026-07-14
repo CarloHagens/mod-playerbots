@@ -282,6 +282,16 @@ private:
     GluthBossHelper helper;
 };
 
+class GothikChooseTargetAction : public AttackAction
+{
+public:
+    GothikChooseTargetAction(PlayerbotAI* ai) : AttackAction(ai, "gothik choose target"), helper(ai) {}
+    bool Execute(Event event) override;
+
+private:
+    GothikBossHelper helper;
+};
+
 class GluthPositionAction : public RotateAroundTheCenterPointAction
 {
 public:

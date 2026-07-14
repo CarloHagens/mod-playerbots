@@ -268,30 +268,21 @@ float FourHorsemenGenericMultiplier::GetValue(Action* action)
     return 1.0f;
 }
 
-// float GothikGenericMultiplier::GetValue(Action* action)
-// {
-//     Unit* boss = AI_VALUE2(Unit*, "find target", "gothik the harvester");
-//     if (!boss)
-//     {
-//         return 1.0f;
-//     }
-//     BossAI* boss_ai = dynamic_cast<BossAI*>(boss->GetAI());
-//     EventMap* eventMap = boss_botAI->GetEvents();
-//     uint32 curr_phase = eventMap->GetPhaseMask();
-//     if (curr_phase == 1 && (dynamic_cast<FollowAction*>(action)))
-//     {
-//         return 0.0f;
-//     }
-//     if (curr_phase == 1 && (dynamic_cast<AttackAction*>(action)))
-//     {
-//         Unit* target = action->GetTarget();
-//         if (target == boss)
-//         {
-//             return 0.0f;
-//         }
-//     }
-//     return 1.0f;
-// }
+float GothikGenericMultiplier::GetValue(Action* action)
+{
+    if (!helper.UpdateBossAI())
+        return 1.0f;
+
+    // While he is on the balcony the scripted target chooser owns targeting; left to
+    // themselves the assists re-acquire the (attackable but pointless) boss upstairs.
+    if (helper.IsBalconyPhase() &&
+        (dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action)))
+    {
+        return 0.0f;
+    }
+
+    return 1.0f;
+}
 
 float GluthGenericMultiplier::GetValue(Action* action)
 {

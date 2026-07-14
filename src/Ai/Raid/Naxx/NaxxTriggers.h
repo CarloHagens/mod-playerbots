@@ -236,6 +236,16 @@ private:
     GluthBossHelper helper;
 };
 
+class GothikTrigger : public Trigger
+{
+public:
+    GothikTrigger(PlayerbotAI* ai) : Trigger(ai, "gothik trigger"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    GothikBossHelper helper;
+};
+
 class GluthMainTankMortalWoundTrigger : public Trigger
 {
 public:

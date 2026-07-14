@@ -129,6 +129,11 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("taunt spell", ACTION_RAID + 1) }
     ));
 
+    // Gothik
+    triggers.push_back(new TriggerNode("gothik",
+        { NextAction("gothik choose target", ACTION_RAID + 1) }
+    ));
+
     // Loatheb
     triggers.push_back(
         new TriggerNode("loatheb",
@@ -151,6 +156,6 @@ void RaidNaxxStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
     multipliers.push_back(new KelthuzadGenericMultiplier(botAI));
     multipliers.push_back(new AnubrekhanGenericMultiplier(botAI));
     multipliers.push_back(new FourHorsemenGenericMultiplier(botAI));
-    // multipliers.push_back(new GothikGenericMultiplier(botAI));
+    multipliers.push_back(new GothikGenericMultiplier(botAI));
     multipliers.push_back(new GluthGenericMultiplier(botAI));
 }
