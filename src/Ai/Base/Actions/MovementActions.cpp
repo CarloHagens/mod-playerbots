@@ -2023,7 +2023,9 @@ bool AvoidAoeAction::AvoidUnitWithDamageAura()
         }
         if (!unit->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE))
         {
-            return false;
+            // Skip selectable units instead of aborting: one selectable unit in the
+            // "possible triggers" list must not disable avoidance of the real triggers.
+            continue;
         }
         Unit::AuraEffectList const& aurasPeriodicTriggerSpell =
             unit->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL);
