@@ -502,7 +502,7 @@ public:
             posX += offset_x;
             posY += offset_y;
         }
-        return {posX, posY};
+        return AvoidVoidZones(posX, posY);
     }
     Unit* CurrentAttackTarget()
     {
@@ -510,6 +510,45 @@ public:
             return _sir;
 
         return _lady;
+    }
+    // Blaumeux drops Void Zones on her target — the attractor parked on the fixed corner
+    // coordinate. Generic avoid-aoe gets overridden by the scripted corner move every tick,
+    // so the corner itself must shift off any zone.
+    std::pair<float, float> AvoidVoidZones(float x, float y)
+    {
+        constexpr float SAFE_DISTANCE = 6.0f;
+        std::vector<Unit*> zones;
+        GuidVector triggers = *context->GetValue<GuidVector>("nearest triggers");
+        for (ObjectGuid const guid : triggers)
+        {
+            Unit* unit = botAI->GetUnit(guid);
+            if (unit && unit->IsAlive() && botAI->EqualLowercaseName(unit->GetName(), "void zone"))
+                zones.push_back(unit);
+        }
+        if (zones.empty())
+            return {x, y};
+
+        auto isSafe = [&zones](float px, float py)
+        {
+            for (Unit* zone : zones)
+            {
+                if (zone->GetDistance2d(px, py) < SAFE_DISTANCE)
+                    return false;
+            }
+            return true;
+        };
+        if (isSafe(x, y))
+            return {x, y};
+
+        for (uint32 i = 0; i < 12; ++i)
+        {
+            float angle = 2 * M_PI * i / 12;
+            float candX = x + cos(angle) * (SAFE_DISTANCE + 2.0f);
+            float candY = y + sin(angle) * (SAFE_DISTANCE + 2.0f);
+            if (isSafe(candX, candY))
+                return {candX, candY};
+        }
+        return {x, y};
     }
 
 protected:
