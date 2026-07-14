@@ -16,9 +16,13 @@ void RaidOsStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(
         new TriggerNode("sartharion dps",
                         { NextAction("sartharion attack priority", ACTION_RAID) }));
-    // Flank dragon positioning
+    // South flank positioning: out of the boss arcs, stand-still for right waves,
+    // and a short southward dodge (with the ranged group) for left waves
     triggers.push_back(new TriggerNode("sartharion melee positioning",
-        { NextAction("rear flank", ACTION_MOVE + 4) }));
+        { NextAction("sartharion melee position", ACTION_MOVE + 4) }));
+    // Anchor ranged/healers in a wave gap so tsunami dodges start from a known spot
+    triggers.push_back(new TriggerNode("sartharion ranged positioning",
+        { NextAction("sartharion ranged position", ACTION_MOVE + 4) }));
 
     triggers.push_back(new TriggerNode("twilight portal enter",
         { NextAction("enter twilight portal", ACTION_RAID + 1) }));

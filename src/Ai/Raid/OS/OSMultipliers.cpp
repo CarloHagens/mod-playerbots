@@ -45,5 +45,23 @@ float SartharionMultiplier::GetValue(Action* action)
     {
         return 0.0f;
     }
+
+    // While a flame tsunami is inbound, don't let generic movement drag bots out of the safe
+    // lanes, and don't let the anchor actions pull a sidestepping tank back into the wave
+    if (dynamic_cast<CombatFormationMoveAction*>(action) || dynamic_cast<FollowAction*>(action) ||
+        dynamic_cast<ReachTargetAction*>(action) || dynamic_cast<RearFlankAction*>(action) ||
+        dynamic_cast<SartharionRangedPositionAction*>(action) || dynamic_cast<SartharionTankPositionAction*>(action) ||
+        dynamic_cast<SartharionMeleePositionAction*>(action))
+    {
+        GuidVector npcs = AI_VALUE(GuidVector, "nearest hostile npcs");
+        for (auto& npc : npcs)
+        {
+            Unit* unit = botAI->GetUnit(npc);
+            if (unit && unit->GetEntry() == NPC_FLAME_TSUNAMI && IsFlameTsunamiIncoming(unit, bot))
+            {
+                return 0.0f;
+            }
+        }
+    }
     return 1.0f;
 }

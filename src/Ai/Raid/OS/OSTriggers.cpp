@@ -12,8 +12,6 @@ bool SartharionTankTrigger::IsActive()
 
 bool FlameTsunamiTrigger::IsActive()
 {
-    if (botAI->IsTank(bot)) { return false; }
-
     Unit* boss = AI_VALUE2(Unit*, "find target", "sartharion");
     if (!boss) { return false; }
 
@@ -74,6 +72,17 @@ bool SartharionMeleePositioningTrigger::IsActive()
     Unit* vesperon = AI_VALUE2(Unit*, "find target", "vesperon");
 
     return !(shadron || tenebron || vesperon);
+}
+
+bool SartharionRangedPositioningTrigger::IsActive()
+{
+    if (botAI->IsTank(bot) || botAI->IsMelee(bot)) { return false; }
+
+    // Bots inside the twilight realm position on their own
+    if (bot->HasAura(SPELL_TWILIGHT_SHIFT)) { return false; }
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "sartharion");
+    return boss != nullptr;
 }
 
 bool TwilightPortalEnterTrigger::IsActive()
