@@ -171,11 +171,15 @@ bool SeeSpellAction::MoveToSpell(WorldPosition& spellPosition, bool inFormation)
         posMap["stay"] = stayPosition;
     }
 
+    // Combat priority: at normal priority the bots' combat positioning (keep caster range,
+    // back out of melee reach) preempts the RTSC walk every tick, so bots stutter and
+    // hesitate to cross near enemies instead of committing to the ordered move.
     if (bot->IsWithinLOS(spellPosition.GetPositionX(), spellPosition.GetPositionY(), spellPosition.GetPositionZ()))
-        return MoveNear(spellPosition.GetMapId(), spellPosition.GetPositionX(), spellPosition.GetPositionY(), spellPosition.GetPositionZ(), 0);
+        return MoveNear(spellPosition.GetMapId(), spellPosition.GetPositionX(), spellPosition.GetPositionY(), spellPosition.GetPositionZ(), 0,
+                        MovementPriority::MOVEMENT_COMBAT);
 
     return MoveTo(spellPosition.GetMapId(), spellPosition.GetPositionX(), spellPosition.GetPositionY(), spellPosition.GetPositionZ(), false,
-                  false);
+                  false, false, false, MovementPriority::MOVEMENT_COMBAT);
 }
 
 void SeeSpellAction::SetFormationOffset(WorldPosition& spellPosition)
