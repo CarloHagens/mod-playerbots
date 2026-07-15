@@ -236,6 +236,16 @@ private:
     GluthBossHelper helper;
 };
 
+class HeiganTrigger : public Trigger
+{
+public:
+    HeiganTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan trigger"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    HeiganBossHelper helper;
+};
+
 class GothikTrigger : public Trigger
 {
 public:

@@ -129,6 +129,11 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("taunt spell", ACTION_RAID + 1) }
     ));
 
+    // Heigan the Unclean
+    triggers.push_back(new TriggerNode("heigan",
+        { NextAction("heigan position", ACTION_RAID + 1) }
+    ));
+
     // Gothik
     triggers.push_back(new TriggerNode("gothik",
         { NextAction("gothik choose target", ACTION_RAID + 1) }
@@ -148,7 +153,7 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 void RaidNaxxStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
 {
     multipliers.push_back(new GrobbulusMultiplier(botAI));
-    //multipliers.push_back(new HeiganDanceMultiplier(botAI));
+    multipliers.push_back(new HeiganDanceMultiplier(botAI));
     multipliers.push_back(new LoathebGenericMultiplier(botAI));
     multipliers.push_back(new ThaddiusGenericMultiplier(botAI));
     multipliers.push_back(new SapphironGenericMultiplier(botAI));

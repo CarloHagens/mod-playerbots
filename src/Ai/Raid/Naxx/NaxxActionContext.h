@@ -46,6 +46,7 @@ public:
 
         creators["gluth choose target"] = &RaidNaxxActionContext::gluth_choose_target;
         creators["gothik choose target"] = &RaidNaxxActionContext::gothik_choose_target;
+        creators["heigan position"] = &RaidNaxxActionContext::heigan_position;
         creators["gluth position"] = &RaidNaxxActionContext::gluth_position;
         creators["gluth slowdown"] = &RaidNaxxActionContext::gluth_slowdown;
 
@@ -85,6 +86,7 @@ private:
     static Action* anubrekhan_position(PlayerbotAI* ai) { return new AnubrekhanPositionAction(ai); }
     static Action* gluth_choose_target(PlayerbotAI* ai) { return new GluthChooseTargetAction(ai); }
     static Action* gothik_choose_target(PlayerbotAI* ai) { return new GothikChooseTargetAction(ai); }
+    static Action* heigan_position(PlayerbotAI* ai) { return new HeiganPositionAction(ai); }
     static Action* gluth_position(PlayerbotAI* ai) { return new GluthPositionAction(ai); }
     static Action* gluth_slowdown(PlayerbotAI* ai) { return new GluthSlowdownAction(ai); }
     //static Action* patchwerk_ranged_position(PlayerbotAI* ai) { return new PatchwerkRangedPositionAction(ai); }

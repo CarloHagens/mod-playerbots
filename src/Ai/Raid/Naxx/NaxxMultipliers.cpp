@@ -37,68 +37,48 @@ float GrobbulusMultiplier::GetValue(Action* action)
     return 1.0f;
 }
 
-//float HeiganDanceMultiplier::GetValue(Action* action)
-//{
-//    Unit* boss = AI_VALUE2(Unit*, "find target", "heigan the unclean");
-//    if (!boss)
-//    {
-//        return 1.0f;
-//    }
-//    bool platform_phase = boss->IsWithinDist2d(2794.26f, -3706.67f, 10.0f);
-//    bool eruption_casting = false;
-//    if (boss->HasUnitState(UNIT_STATE_CASTING))
-//    {
-//        Spell* spell = boss->GetCurrentSpell(CURRENT_GENERIC_SPELL);
-//        if (!spell)
-//        {
-//            spell = boss->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
-//        }
-//        if (spell)
-//        {
-//            SpellInfo const* info = spell->GetSpellInfo();
-//            bool isEruption = NaxxSpellIds::MatchesAnySpellId(info, {NaxxSpellIds::Eruption10});
-//            if (!isEruption && info && info->SpellName[LOCALE_enUS])
-//            {
-//                // Fallback to name for custom spell data.
-//                isEruption = botAI->EqualLowercaseName(info->SpellName[LOCALE_enUS], "eruption");
-//            }
-//            if (isEruption)
-//            {
-//                eruption_casting = true;
-//            }
-//        }
-//    }
-//    if (dynamic_cast<CombatFormationMoveAction*>(action) ||
-//        dynamic_cast<CastDisengageAction*>(action) ||
-//        dynamic_cast<CastBlinkBackAction*>(action) )
-//    {
-//        return 0.0f;
-//    }
-//    if (!platform_phase && !eruption_casting)
-//    {
-//        return 1.0f;
-//    }
-//    if (dynamic_cast<HeiganDanceAction*>(action) || dynamic_cast<CurePartyMemberAction*>(action))
-//    {
-//        return 1.0f;
-//    }
-//    if (dynamic_cast<CastSpellAction*>(action) && !dynamic_cast<CastMeleeSpellAction*>(action))
-//    {
-//        CastSpellAction* spellAction = dynamic_cast<CastSpellAction*>(action);
-//        uint32 spellId = AI_VALUE2(uint32, "spell id", spellAction->getSpell());
-//        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
-//        if (!spellInfo)
-//        {
-//            return 0.0f;
-//        }
-//        uint32 castTime = spellInfo->CalcCastTime();
-//        if (castTime == 0 && !spellInfo->IsChanneled())
-//        {
-//            return 1.0f;
-//        }
-//    }
-//    return 0.0f;
-//}
+float HeiganDanceMultiplier::GetValue(Action* action)
+{
+    if (!helper.UpdateBossAI())
+        return 1.0f;
+
+    if (dynamic_cast<CombatFormationMoveAction*>(action))
+        return 0.0f;
+
+    // Fast dance: the scripted dance position owns all movement and targeting.
+    // Avoid-aoe is suppressed too - eruptions are dodged by schedule, and reactive
+    // dodging would shove bots off the safe-section path.
+    if (helper.IsFastDance())
+    {
+        if (dynamic_cast<ReachTargetAction*>(action) || dynamic_cast<FollowAction*>(action) ||
+            dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action) ||
+            dynamic_cast<FleeAction*>(action) || dynamic_cast<AvoidAoeAction*>(action))
+        {
+            return 0.0f;
+        }
+
+        // Only instants are safe while dancing: a cast time or channel roots the
+        // caster through an eruption. Applies to heals too - an eaten eruption
+        // costs more than a delayed heal.
+        if (CastSpellAction* spellAction = dynamic_cast<CastSpellAction*>(action))
+        {
+            if (!dynamic_cast<CastMeleeSpellAction*>(action))
+            {
+                uint32 spellId = AI_VALUE2(uint32, "spell id", spellAction->getSpell());
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+                if (!spellInfo || spellInfo->CalcCastTime() > 0 || spellInfo->IsChanneled())
+                    return 0.0f;
+            }
+        }
+    }
+
+    // Slow phase: keep ranged planted on the platform - their reach logic would
+    // otherwise drag them off the dais toward the boss.
+    if (!helper.IsFastDance() && botAI->IsRanged(bot) && dynamic_cast<ReachTargetAction*>(action))
+        return 0.0f;
+
+    return 1.0f;
+}
 
 float LoathebGenericMultiplier::GetValue(Action* action)
 {

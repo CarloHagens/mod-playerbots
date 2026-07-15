@@ -107,6 +107,16 @@ private:
 //    virtual bool Execute(Event event);
 //};
 
+class HeiganPositionAction : public MovementAction
+{
+public:
+    HeiganPositionAction(PlayerbotAI* ai) : MovementAction(ai, "heigan position"), helper(ai) {}
+    bool Execute(Event event) override;
+
+private:
+    HeiganBossHelper helper;
+};
+
 class ThaddiusAttackNearestPetAction : public AttackAction
 {
 public:

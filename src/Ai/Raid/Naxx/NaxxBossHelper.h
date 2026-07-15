@@ -397,6 +397,142 @@ private:
     Unit* _unit = nullptr;
 };
 
+class HeiganBossHelper : public AiObject
+{
+public:
+    HeiganBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
+    // Heigan's own platform (safe camp for ranged in the slow phase; he teleports onto it
+    // for the fast dance and fills it with Plague Cloud).
+    const std::pair<float, float> platformPos = {2794.26f, -3706.67f};
+    const float platformZ = 276.54f;
+    // Mid-slice floor waypoints for the core's eruption sections 0..3. Derived from the
+    // original dance waypoints, classified against GetEruptionSection geometry
+    // (instance_naxxramas.cpp: HeiganPos {2796,-3707} + slopes).
+    const std::pair<float, float> sectionPos[4] = {
+        {2755.99f, -3703.96f},  // section 0
+        {2762.30f, -3684.59f},  // section 1
+        {2775.49f, -3674.43f},  // section 2
+        {2794.88f, -3668.12f},  // section 3
+    };
+
+    bool UpdateBossAI()
+    {
+        if (!bot->IsInCombat())
+            Reset();
+
+        if (_unit && (!_unit->IsInWorld() || !_unit->IsAlive()))
+            Reset();
+
+        if (!_unit)
+        {
+            _unit = AI_VALUE2(Unit*, "find target", "heigan the unclean");
+            if (!_unit)
+                return false;
+        }
+        // Dance state is shared across all helper instances (see SapphironBossHelper).
+        DanceState& state = _danceStates[_unit->GetGUID()];
+        if (!_unit->IsInCombat())
+        {
+            state = {};
+        }
+        else
+        {
+            bool onPlatform = _unit->IsWithinDist2d(platformPos.first, platformPos.second, 10.0f);
+            // Heigan idles ON his platform before the pull, so being up there is not enough:
+            // only a ground->platform transition observed during combat is a dance teleport.
+            if (!onPlatform)
+                state.seenOffPlatform = true;
+
+            if (onPlatform && !state.wasOnPlatform && state.seenOffPlatform)
+                state.fastStartMs = getMSTime();
+
+            state.wasOnPlatform = onPlatform;
+        }
+        return true;
+    }
+    // Timing from boss_heigan.cpp StartFightPhase: the fast dance teleports at t=0, first
+    // eruption at 7s, repeating every 4s, phase lasts 45s. Deterministic, no RNG.
+    bool IsFastDance()
+    {
+        if (!_unit)
+            return false;
+
+        auto it = _danceStates.find(_unit->GetGUID());
+        if (it == _danceStates.end() || !it->second.fastStartMs)
+            return false;
+
+        return getMSTime() - it->second.fastStartMs <= FAST_DANCE_DURATION;
+    }
+    Unit* GetBoss() { return _unit; }
+    // Safe sections ping-pong 3,2,1,0,1,2,... (each phase resets to 3 and moves down first).
+    std::pair<float, float> DancePosition()
+    {
+        uint32 elapsed = getMSTime() - _danceStates[_unit->GetGUID()].fastStartMs;
+        // Index of the NEXT eruption: that is the section to stand in right now.
+        uint32 k = elapsed < FAST_FIRST_ERUPTION ? 0 : (elapsed - FAST_FIRST_ERUPTION) / FAST_ERUPTION_INTERVAL + 1;
+        uint8 cur = PingPongSection(k);
+        uint8 next = PingPongSection(k + 1);
+        // Lean toward the following section to shorten the next walk, but verify the
+        // candidate still classifies inside the safe wedge (the boundaries are angular,
+        // and boundary tiles splash across) — fall back toward mid-section if not.
+        for (float bias : {0.20f, 0.10f, 0.0f})
+        {
+            float x = sectionPos[cur].first + (sectionPos[next].first - sectionPos[cur].first) * bias;
+            float y = sectionPos[cur].second + (sectionPos[next].second - sectionPos[cur].second) * bias;
+            if (SectionOf(x, y) == cur)
+                return {x, y};
+        }
+        return sectionPos[cur];
+    }
+
+private:
+    static uint8 PingPongSection(uint32 k)
+    {
+        static uint8 const seq[6] = {3, 2, 1, 0, 1, 2};
+        return seq[k % 6];
+    }
+
+    // Mirror of GetEruptionSection in instance_naxxramas.cpp (HeiganPos {2796,-3707}).
+    static uint8 SectionOf(float x, float y)
+    {
+        constexpr float HX = 2796.0f;
+        constexpr float HY = -3707.0f;
+        float dy = y - HY;
+        if (dy < 1.0f)
+            return 0;
+
+        float dx = x - HX;
+        if (dx > -1.0f)
+            return 3;
+
+        constexpr float slopes[3] = {(-3685.0f - HY) / (2724.0f - HX), (-3647.0f - HY) / (2749.0f - HX),
+                                     (-3637.0f - HY) / (2771.0f - HX)};
+        float slope = dy / dx;
+        for (uint8 i = 0; i < 3; ++i)
+        {
+            if (slope > slopes[i])
+                return i;
+        }
+        return 3;
+    }
+
+    struct DanceState
+    {
+        bool wasOnPlatform = false;
+        bool seenOffPlatform = false;
+        uint32 fastStartMs = 0;
+    };
+
+    void Reset() { _unit = nullptr; }
+
+    static constexpr uint32 FAST_FIRST_ERUPTION = 7000;
+    static constexpr uint32 FAST_ERUPTION_INTERVAL = 4000;
+    static constexpr uint32 FAST_DANCE_DURATION = 45000;
+
+    Unit* _unit = nullptr;
+    inline static std::unordered_map<ObjectGuid, DanceState> _danceStates;
+};
+
 class GothikBossHelper : public AiObject
 {
 public:

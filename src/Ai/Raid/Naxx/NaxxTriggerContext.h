@@ -47,6 +47,7 @@ public:
 
         creators["gluth"] = &RaidNaxxTriggerContext::gluth;
         creators["gothik"] = &RaidNaxxTriggerContext::gothik;
+        creators["heigan"] = &RaidNaxxTriggerContext::heigan;
         creators["gluth main tank mortal wound"] = &RaidNaxxTriggerContext::gluth_main_tank_mortal_wound;
 
         creators["loatheb"] = &RaidNaxxTriggerContext::loatheb;
@@ -81,6 +82,7 @@ private:
     //static Trigger* patchwerk_ranged(PlayerbotAI* ai) { return new PatchwerkRangedTrigger(ai); }
     static Trigger* gluth(PlayerbotAI* ai) { return new GluthTrigger(ai); }
     static Trigger* gothik(PlayerbotAI* ai) { return new GothikTrigger(ai); }
+    static Trigger* heigan(PlayerbotAI* ai) { return new HeiganTrigger(ai); }
     static Trigger* gluth_main_tank_mortal_wound(PlayerbotAI* ai) { return new GluthMainTankMortalWoundTrigger(ai); }
     static Trigger* loatheb(PlayerbotAI* ai) { return new LoathebTrigger(ai); }
 };
