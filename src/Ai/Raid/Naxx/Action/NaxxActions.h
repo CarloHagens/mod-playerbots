@@ -267,6 +267,22 @@ private:
     KelthuzadBossHelper helper;
 };
 
+// Phase two (25-man): Chains of Kel'Thuzad charms three players for 20 seconds. Lock a
+// charmed raid member down with the bot's own crowd control instead of letting them
+// wreck the raid — melee only when the victim is in melee range, ranged at spell range.
+class KelthuzadCcCharmedPlayerAction : public Action
+{
+public:
+    KelthuzadCcCharmedPlayerAction(PlayerbotAI* ai) : Action(ai, "kel'thuzad cc charmed player"), helper(ai) {}
+    bool Execute(Event event) override;
+
+private:
+    bool IsCrowdControlled(Unit* target) const;
+    bool IsCcIncoming(Player* target) const;
+
+    KelthuzadBossHelper helper;
+};
+
 class AnubrekhanChooseTargetAction : public AttackAction
 {
 public:

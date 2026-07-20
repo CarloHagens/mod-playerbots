@@ -34,6 +34,7 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(
         new TriggerNode("kel'thuzad",
         {
+            NextAction("kel'thuzad cc charmed player", ACTION_RAID + 3),
             NextAction("kel'thuzad position", ACTION_RAID + 2),
             NextAction("kel'thuzad choose target", ACTION_RAID + 1)
         })

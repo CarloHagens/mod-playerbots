@@ -6,6 +6,7 @@
 
 #include "AiObject.h"
 #include "AiObjectContext.h"
+#include "CharmInfo.h"
 #include "EventMap.h"
 #include "Log.h"
 #include "NamedObjectContext.h"
@@ -98,6 +99,48 @@ public:
     }
     bool IsPhaseOne() { return _unit && _unit->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE); }
     bool IsPhaseTwo() { return _unit && !_unit->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE); }
+    Unit* GetBoss() { return _unit; }
+    // Phase one: the idle alcove adds aggro on pets as well as players
+    // (boss_kelthuzad_minionAI::MoveInLineOfSight), and an aggroed alcove add calls every
+    // same-entry add within 15 yards to attack, so one pet straying toward an alcove — e.g.
+    // chasing a wave add back toward its spawn — snowballs into a mass pull. Keep pets and
+    // guardians passive and heeled for the whole phase; hand them back once he is attackable.
+    void UpdatePetSafety()
+    {
+        Pet* pet = bot->GetPet();
+        std::vector<Creature*> pets;
+        if (pet)
+            pets.push_back(pet);
+
+        for (Unit* controlled : bot->m_Controlled)
+        {
+            Creature* creature = controlled->ToCreature();
+            if (creature && creature != pet && !creature->IsTotem())
+                pets.push_back(creature);
+        }
+
+        ReactStates react = IsPhaseOne() ? REACT_PASSIVE : DefaultPetReactState();
+        for (Creature* creature : pets)
+        {
+            if (creature->GetReactState() != react)
+            {
+                creature->SetReactState(react);
+                if (CharmInfo* charmInfo = creature->GetCharmInfo())
+                    charmInfo->SetPlayerReactState(react);
+            }
+            if (react == REACT_PASSIVE && creature->GetVictim())
+            {
+                if (creature == pet)
+                    botAI->PetFollow();
+                else
+                {
+                    creature->AttackStop();
+                    creature->InterruptNonMeleeSpells(false);
+                    creature->GetMotionMaster()->MoveFollow(bot, PET_FOLLOW_DIST, creature->GetFollowAngle());
+                }
+            }
+        }
+    }
     Unit* GetAnyShadowFissure()
     {
         Unit* shadow_fissure = nullptr;
@@ -115,6 +158,19 @@ public:
 
 private:
     void Reset() { _unit = nullptr; }
+
+    static ReactStates DefaultPetReactState()
+    {
+        switch (sPlayerbotAIConfig.defaultPetStance)
+        {
+            case 0:
+                return REACT_PASSIVE;
+            case 2:
+                return REACT_AGGRESSIVE;
+            default:
+                return REACT_DEFENSIVE;
+        }
+    }
 
     Unit* _unit = nullptr;
 };

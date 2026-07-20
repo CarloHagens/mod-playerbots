@@ -195,17 +195,25 @@ float KelthuzadGenericMultiplier::GetValue(Action* action)
     if (!helper.UpdateBossAI())
         return 1.0f;
 
+    // Combat formation spreading would pull bots out of the phase-one center stack and
+    // the phase-two melee camps — scripted positions own movement for this fight.
     if ((dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action) ||
-         dynamic_cast<CastDebuffSpellOnAttackerAction*>(action) || dynamic_cast<FleeAction*>(action)))
+         dynamic_cast<CastDebuffSpellOnAttackerAction*>(action) || dynamic_cast<FleeAction*>(action) ||
+         dynamic_cast<CombatFormationMoveAction*>(action)))
     {
         return 0.0f;
     }
     if (helper.IsPhaseOne())
     {
+        // The alcove adds aggro on pets and summons too, and chain-pull each other (see
+        // KelthuzadBossHelper::UpdatePetSafety) — no uncontrolled summon may be up in
+        // phase one, since its AI picks its own targets and strays toward the alcoves.
         if (dynamic_cast<CastTotemAction*>(action) || dynamic_cast<CastShadowfiendAction*>(action) ||
             dynamic_cast<CastRaiseDeadAction*>(action) || dynamic_cast<CastFeignDeathAction*>(action) ||
             dynamic_cast<CastInvisibilityAction*>(action) || dynamic_cast<CastVanishAction*>(action) ||
-            dynamic_cast<PetAttackAction*>(action))
+            dynamic_cast<PetAttackAction*>(action) || dynamic_cast<CastArmyOfTheDeadAction*>(action) ||
+            dynamic_cast<CastSummonGargoyleAction*>(action) || dynamic_cast<CastFeralSpiritAction*>(action) ||
+            dynamic_cast<CastMirrorImageAction*>(action) || dynamic_cast<CastSummonWaterElementalAction*>(action))
         {
             return 0.0f;
         }
