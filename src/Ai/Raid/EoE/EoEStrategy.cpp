@@ -8,6 +8,8 @@ void RaidEoEStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("malygos position", ACTION_MOVE) }));
     triggers.push_back(new TriggerNode("malygos",
         { NextAction("malygos target", ACTION_RAID + 1) }));
+    triggers.push_back(new TriggerNode("power spark",
+        { NextAction("malygos grip spark", ACTION_RAID + 2) }));
 
     triggers.push_back(new TriggerNode("group flying",
         { NextAction("eoe fly drake", ACTION_NORMAL + 1) }));
